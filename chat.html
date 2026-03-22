@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>AI聊天</title>
+</head>
+<body>
+
+<h2>AI聊天</h2>
+
+<div id="chatBox" style="width:300px;height:300px;border:1px solid #000;overflow:auto;"></div>
+
+<input id="msg" placeholder="输入内容">
+<button onclick="send()">发送</button>
+
+<script>
+const user = localStorage.getItem('user');
+
+if (!user) {
+  alert('请先登录');
+  window.location.href = 'index.html';
+}
+
+// 加载历史记录
+function loadMessages() {
+  fetch('http://47.110.85.108:3000/messages?username=' + user)
+    .then(res => res.json())
+    .then(data => {
+      data.forEach(item => {
+        if (item.message.startsWith("AI说")) {
+          document.getElementById('chatBox').innerHTML += 
+            "<div style='color:blue'>🤖 " + item.message + "</div>";
+        } else {
+          document.getElementById('chatBox').innerHTML += 
+            "<div style='color:green'>👤 " + item.message + "</div>";
+        }
+      });
+    });
+}
+
+// 发送消息
+function send() {
+  const msg = document.getElementById('msg').value;
+
+  if (!msg.trim()) {
+    alert("请输入内容");
+    return;
+  }
+
+  document.getElementById('chatBox').innerHTML += "<div>👤 " + msg + "</div>";
+
+  fetch('http://47.110.85.108:3000/chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      message: msg,
+      username: user
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById('chatBox').innerHTML += "<div>🤖 " + data.reply + "</div>";
+  });
+
+  document.getElementById('msg').value = "";
+}
+
+// 页面加载自动执行
+loadMessages();
+</script>
+
+</body>
+</html>

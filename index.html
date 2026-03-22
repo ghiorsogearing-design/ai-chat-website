@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>AI聊天</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f5f5f5;
+        }
+
+        .container {
+            width: 500px;
+            margin: 50px auto;
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        #chat {
+            height: 400px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ddd;
+            padding: 10px;
+        }
+
+        .msg {
+            margin: 10px 0;
+            max-width: 70%;
+            padding: 8px 12px;
+            border-radius: 10px;
+            word-wrap: break-word;
+        }
+
+        .user {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .ai {
+            background: #eee;
+            color: black;
+        }
+
+        .input-area {
+            display: flex;
+            margin-top: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            margin-left: 10px;
+            padding: 10px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>AI聊天</h2>
+
+    <div id="chat"></div>
+
+    <div class="input-area">
+        <input id="input" placeholder="输入内容..." onkeydown="handleKey(event)">
+        <button onclick="send()">发送</button>
+    </div>
+</div>
+
+<script>
+function addMessage(text, cls) {
+    const chat = document.getElementById("chat");
+    const div = document.createElement("div");
+    div.className = "msg " + cls;
+    div.innerText = text;
+
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function send() {
+    const input = document.getElementById("input");
+    const message = input.value.trim();
+
+    if (!message) return;
+
+    addMessage("你：" + message, "user");
+
+    input.value = "";
+
+    // 👉 显示“思考中”
+    addMessage("AI：思考中...", "ai");
+
+    fetch("http://localhost:8081/api/chat?msg=" + encodeURIComponent(message))
+        .then(res => res.text())
+        .then(data => {
+            const chat = document.getElementById("chat");
+
+            // 删除“思考中”
+            chat.removeChild(chat.lastChild);
+
+            // 创建AI消息框
+            const div = document.createElement("div");
+            div.className = "msg ai";
+            chat.appendChild(div);
+
+            let i = 0;
+
+            function typeWriter() {
+                if (i <= data.length) {
+                    div.innerText = "AI：" + data.substring(0, i) + "|";
+                    i++;
+                    chat.scrollTop = chat.scrollHeight;
+                    setTimeout(typeWriter, 30); // 👉 打字速度
+                } else {
+                    div.innerText = "AI：" + data; // 去掉光标
+                }
+            }
+
+            typeWriter();
+        })
+        .catch(err => {
+            addMessage("AI：出错了", "ai");
+        });
+}
+
+// 回车发送
+function handleKey(e) {
+    if (e.key === "Enter") {
+        send();
+    }
+}
+</script>
+
+</body>
+</html>
